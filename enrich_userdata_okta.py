@@ -48,16 +48,16 @@ def get_all_okta_users(token):
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             
-            # Handle rate limiting
             rate_limit_remaining = int(response.headers.get('x-rate-limit-remaining', 1))
             if rate_limit_remaining <= 1:
-                reset_time = int(response.headers.get('x-rate-limit-reset', 60))
-                print(f"Rate limit approaching. Sleeping {reset_time} seconds")
-                time.sleep(reset_time)
-            
+                current_time = int(time.time())
+                reset_time = int(response.headers.get('x-rate-limit-reset', current_time + 60))
+                sleep_duration = reset_time - current_time
+                sleep_duration = max(sleep_duration, 0)
+                print(f"Rate limit approaching. Sleeping {sleep_duration} seconds")
+                time.sleep(sleep_duration)
             users.extend(response.json())
             
-            # Check for next page
             link_header = response.headers.get('link', '')
             url = None
             for link in link_header.split(','):
