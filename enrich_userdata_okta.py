@@ -5,10 +5,18 @@ import json
 import os
 import time
 from copy import deepcopy
+from dotenv import load_dotenv
 
-OKTA_DOMAIN = ""  
+
+load_dotenv()
+
+OKTA_ORG_URL = os.getenv('OKTA_ORG_URL')
+OKTA_API_KEY = os.getenv('OKTA_API_KEY')
+
+if not OKTA_ORG_URL or not OKTA_API_KEY:
+    raise ValueError("Missing required environment variables. Please check your .env file.")
+
 DEFAULT_OUTPUT_DIR = os.path.expanduser("~/Documents")
-token = ""
 
 def get_users(import_file):
     """Read CSV file and return list of dictionaries."""
@@ -40,7 +48,7 @@ def get_all_okta_users(token):
     }
     
     users = []
-    url = f"{OKTA_DOMAIN}/api/v1/users?limit=200"
+    url = f"{OKTA_ORG_URL}/api/v1/users?limit=200"
     
     while url:
         print(f"Fetching: {url}")
@@ -139,7 +147,7 @@ def main():
     """Main execution flow."""
     try:
         print("Fetching all Okta users...")
-        all_okta_users = get_all_okta_users(token)
+        all_okta_users = get_all_okta_users(OKTA_API_KEY)
         if not all_okta_users:
             print("Failed to fetch Okta users")
             return

@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
 import csv
+from pathlib import Path
 import requests
 import json
 import time
 import collections
-import os 
+import os
+from dotenv import load_dotenv
 
-#enter org url ie. https://company.okta.com
-orgUrl = ""
-#enter api key
-apiKey = ""
-#enter location for file ending with .csv
+
+load_dotenv()
+
+OKTA_ORG_URL = os.getenv('OKTA_ORG_URL')
+OKTA_API_KEY = os.getenv('OKTA_API_KEY')
+
+if not OKTA_ORG_URL or not OKTA_API_KEY:
+    raise ValueError("Missing required environment variables. Please check your .env file.")
+
 csv_location = os.path.expanduser("~/Documents/Applications_report.csv")
-#enter user types you want included
-valid_user_types = {}
+valid_user_types = ["Full Time", "Contractor", "Intern", "Contractor-1099"]
 
 def get_paginated_data(url):
     items = []
     headers = {
-    'Accept': 'application/json',
-    'Authorization': f'SSWS {apiKey}',
+        'Accept': 'application/json',
+        'Authorization': f'SSWS {OKTA_API_KEY}',
     }
     while url:
         print(f"Fetching: {url}")
@@ -29,10 +34,8 @@ def get_paginated_data(url):
         rate_limit_remaining = int(response.headers.get('x-rate-limit-remaining', 1))
         if rate_limit_remaining <= 1:
             current_time = int(time.time())
-            # Get the reset timestamp, defaulting to current_time + 60 if not provided
             reset_time = int(response.headers.get('x-rate-limit-reset', current_time + 60))
             sleep_duration = reset_time - current_time + 1
-            # Ensure sleep duration is not negative
             sleep_duration = max(sleep_duration, 0)
             print(f"Rate limit approaching. Sleeping {sleep_duration} seconds")
             time.sleep(sleep_duration)
@@ -48,17 +51,14 @@ def get_paginated_data(url):
     
     return items
 
+users = get_paginated_data(f"{OKTA_ORG_URL}/api/v1/users?limit=200&search=status eq \"ACTIVE\"")
 
-users = get_paginated_data(f"{orgUrl}/api/v1/users?limit=200&search=status eq \"ACTIVE\"")
-
-apps = get_paginated_data(f"{orgUrl}/api/v1/apps?filter=status eq \"ACTIVE\"")
-
+apps = get_paginated_data(f"{OKTA_ORG_URL}/api/v1/apps?filter=status eq \"ACTIVE\"")
 
 apps_dict = {app["id"]: app["label"] for app in apps}
 apps_dict = collections.OrderedDict(
     sorted(apps_dict.items(), key=lambda item: item[1])
 )
-
 
 user_records = {}
 
@@ -85,9 +85,8 @@ for user in users:
     
     user_records[user["id"]] = user_record
 
-
 for app_id, app_name in apps_dict.items():
-    app_users = get_paginated_data(f"{orgUrl}/api/v1/apps/{app_id}/users")
+    app_users = get_paginated_data(f"{OKTA_ORG_URL}/api/v1/apps/{app_id}/users")
     
     for app_user in app_users:
         user_id = app_user.get("id")
@@ -95,9 +94,8 @@ for app_id, app_name in apps_dict.items():
             continue       
         user_records[user_id][app_name] = "assigned"
 
-
 with open(csv_location, 'w', newline='') as csvfile:
-    fieldnames = list(user_records.values)
+    fieldnames = list(next(iter(user_records.values())).keys())
     
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
