@@ -52,7 +52,7 @@ def get_all_okta_users(token):
             if rate_limit_remaining <= 1:
                 current_time = int(time.time())
                 reset_time = int(response.headers.get('x-rate-limit-reset', current_time + 60))
-                sleep_duration = reset_time - current_time
+                sleep_duration = reset_time - current_time + 1
                 sleep_duration = max(sleep_duration, 0)
                 print(f"Rate limit approaching. Sleeping {sleep_duration} seconds")
                 time.sleep(sleep_duration)

@@ -31,7 +31,7 @@ def get_paginated_data(url):
             current_time = int(time.time())
             # Get the reset timestamp, defaulting to current_time + 60 if not provided
             reset_time = int(response.headers.get('x-rate-limit-reset', current_time + 60))
-            sleep_duration = reset_time - current_time
+            sleep_duration = reset_time - current_time + 1
             # Ensure sleep duration is not negative
             sleep_duration = max(sleep_duration, 0)
             print(f"Rate limit approaching. Sleeping {sleep_duration} seconds")
@@ -49,9 +49,9 @@ def get_paginated_data(url):
     return items
 
 
-users = get_paginated_data("{orgUrl}/api/v1/users?limit=200&search=status eq \"ACTIVE\"")
+users = get_paginated_data(f"{orgUrl}/api/v1/users?limit=200&search=status eq \"ACTIVE\"")
 
-apps = get_paginated_data("{orgUrl}/api/v1/apps?filter=status eq \"ACTIVE\"")
+apps = get_paginated_data(f"{orgUrl}/api/v1/apps?filter=status eq \"ACTIVE\"")
 
 
 apps_dict = {app["id"]: app["label"] for app in apps}
@@ -87,7 +87,7 @@ for user in users:
 
 
 for app_id, app_name in apps_dict.items():
-    app_users = get_paginated_data({orgUrl}/api/v1/apps/{app_id}/users")
+    app_users = get_paginated_data(f"{orgUrl}/api/v1/apps/{app_id}/users")
     
     for app_user in app_users:
         user_id = app_user.get("id")
@@ -104,4 +104,3 @@ with open(csv_location, 'w', newline='') as csvfile:
     for record in user_records.values():
         writer.writerow(record)
 print(f"Report generated at {csv_location}")
-
