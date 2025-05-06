@@ -7,23 +7,15 @@ import collections
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
 
-OKTA_ORG_URL = os.getenv('OKTA_ORG_URL')
-OKTA_API_KEY = os.getenv('OKTA_API_KEY')
 
-if not OKTA_ORG_URL or not OKTA_API_KEY:
-    raise ValueError("Missing required environment variables. Please check your .env file.")
-
-csv_location = os.path.expanduser("~/Documents/Applications_report.csv")
-valid_user_types = ["Full Time", "Contractor", "Intern", "Contractor-1099"]
-
-def get_paginated_data(url):
+def okta_api(endpoint):
     items = []
     headers = {
         'Accept': 'application/json',
         'Authorization': f'SSWS {OKTA_API_KEY}',
     }
+    url  = "{OKTA_ORG_URL}{endpoint}"
     while url:
         print(f"Fetching: {url}")
         response = requests.get(url, headers=headers)
@@ -48,3 +40,40 @@ def get_paginated_data(url):
         url = next_url
     
     return items
+
+def delete_users():
+    profile = "profile"
+    department = "department"
+    id = "id"
+    login = "login"
+
+
+
+    users = okta_api("/api/v1/users?limit=200")
+    for user in users :
+        user_profile = user[profile]
+        dept = user_profile.get(department, "N/A")
+        if dept != "IT" :
+            print(user[profile][login])
+            
+            headers = {
+                'Accept': 'application/json',
+                'Authorization': f'SSWS {OKTA_API_KEY}',
+            }
+            payload = {}
+            url = "{OKTA_ORG_URL}/api/v1/users/{user[id]}}?sendEmail=false"
+            print(url)
+            #response = requests.request("DELETE", url, headers=headers, data=payload)
+
+            print(response.text)
+
+
+if __name__ == "__main__":
+    load_dotenv()
+    
+    OKTA_ORG_URL = os.getenv('OKTA_ORG_URL')
+    OKTA_API_KEY = os.getenv('OKTA_API_KEY')
+    
+    if not OKTA_ORG_URL or not OKTA_API_KEY:
+        raise ValueError("Missing required environment variables. Please check your .env file.")
+    delete_users()
