@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import csv
 from pathlib import Path
 import requests
@@ -15,7 +16,7 @@ def okta_api(endpoint):
         'Accept': 'application/json',
         'Authorization': f'SSWS {OKTA_API_KEY}',
     }
-    url  = "{OKTA_ORG_URL}{endpoint}"
+    url  = OKTA_ORG_URL+endpoint
     while url:
         print(f"Fetching: {url}")
         response = requests.get(url, headers=headers)
@@ -61,11 +62,11 @@ def delete_users():
                 'Authorization': f'SSWS {OKTA_API_KEY}',
             }
             payload = {}
-            url = "{OKTA_ORG_URL}/api/v1/users/{user[id]}}?sendEmail=false"
+            url = f"{OKTA_ORG_URL}/api/v1/users/{user[id]}?sendEmail=false"
             print(url)
-            #response = requests.request("DELETE", url, headers=headers, data=payload)
-
+            response = requests.request("DELETE", url, headers=headers, data=payload)
             print(response.text)
+            response = requests.request("DELETE", url, headers=headers, data=payload)
 
 
 if __name__ == "__main__":
